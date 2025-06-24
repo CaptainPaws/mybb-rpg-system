@@ -3,32 +3,29 @@ namespace RPGSystem;
 
 class Core
 {
-    /** Единственный экземпляр ядра */
-    private static ?self $instance = null;
 
-    /** @var array<string,object> зарегистрированные модули */
+    private static ?Core $instance = null;
+    /** @var array<string,object> */
     private array $modules = [];
 
-    /** Запрещаем прямое создание объекта */
     private function __construct()
     {
-        // Здесь можно автоматически подключать базовые модули,
-        // если захочешь делать автозагрузку.
+        // Modules can be loaded here in the future
     }
 
-    /** Получаем (или создаём) singleton-экземпляр */
-    public static function getInstance(): self
+    public static function getInstance(): Core
     {
-        return self::$instance ??= new self();
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
 
-    /** Регистрируем модуль для дальнейшего использования */
     public function registerModule(string $name, object $module): void
     {
         $this->modules[$name] = $module;
     }
 
-    /** Получаем модуль по имени или null */
     public function getModule(string $name): ?object
     {
         return $this->modules[$name] ?? null;

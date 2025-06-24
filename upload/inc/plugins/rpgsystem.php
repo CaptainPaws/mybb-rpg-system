@@ -207,7 +207,6 @@ function rpgsystem_install()
     rebuild_settings();
 }
 
-
 function rpgsystem_is_installed(): bool
 {
     global $db;
@@ -220,7 +219,6 @@ function rpgsystem_uninstall()
     if ($db->table_exists('rpgsystem_modules')) {
         $db->write_query("DROP TABLE `" . TABLE_PREFIX . "rpgsystem_modules`");
     }
-
     if ($db->table_exists('rpgsystem_currencies')) {
         $db->write_query("DROP TABLE `" . TABLE_PREFIX . "rpgsystem_currencies`");
     }
@@ -250,21 +248,15 @@ function rpgsystem_activate()
     find_replace_templatesets('postbit', '#\{\$post\[\'postdate\'\]\}</span>#', '{\$post[\'postdate\']}</span> {\$post[\'rpgcharacter\']} <span class="rpg-count">{\$post[\'rpg_count\']}</span>');
     find_replace_templatesets('newreply', '#</textarea>#', '</textarea><span id="rpg-counter"></span>');
     find_replace_templatesets('newthread', '#</textarea>#', '</textarea><span id="rpg-counter"></span>');
-    find_replace_templatesets('postbit', '#\{\$post\[\'postdate\'\]\}</span>#', '{\$post[\'postdate\']}</span> <span class="rpg-count">{\$post[\'rpg_count\']}</span>');
-    find_replace_templatesets('newreply', '#</textarea>#', '</textarea><span id="rpg-counter"></span>');
-    find_replace_templatesets('newthread', '#</textarea>#', '</textarea><span id="rpg-counter"></span>');
-    // Add templates or settings here
 }
 
 function rpgsystem_deactivate()
 {
     require_once MYBB_ROOT . 'inc/adminfunctions_templates.php';
     find_replace_templatesets('postbit', '# \{\$post\[\'rpgcharacter\'\]\} <span class="rpg-count">\{\$post\[\'rpg_count\'\]\}</span>#', '', 0);
-    find_replace_templatesets('postbit', '# <span class="rpg-count">\{\$post\[\'rpg_count\'\]\}</span>#', '', 0);
     find_replace_templatesets('newreply', '#<span id="rpg-counter"></span>#', '', 0);
     find_replace_templatesets('newthread', '#<span id="rpg-counter"></span>#', '', 0);
 }
-
 
 require_once __DIR__ . '/rpgsystem/core.php';
 require_once __DIR__ . '/rpgsystem/modules/CharacterCreation.php';
@@ -282,7 +274,6 @@ require_once __DIR__ . '/rpgsystem/modules/Scenes.php';
 require_once __DIR__ . '/rpgsystem/modules/Quests.php';
 require_once __DIR__ . '/rpgsystem/modules/Toolbar.php';
 require_once __DIR__ . '/rpgsystem/modules/Counter.php';
-
 
 use RPGSystem\Core;
 use RPGSystem\Modules\CharacterCreation;
@@ -362,22 +353,6 @@ function rpgsystem_admin_menu(array &$sub_menu): void
 function rpgsystem_admin_page(): void
 {
     global $mybb, $lang, $page, $db;
-
-    if ($mybb->input['module'] === 'rpgsystem') {
-        $page->add_breadcrumb_item($lang->rpgsystem_name, 'index.php?module=rpgsystem');
-        $page->output_header($lang->rpgsystem_name);
-
-        $sub_tabs['overview'] = [
-            'title' => $lang->rpgsystem_name,
-            'link' => 'index.php?module=rpgsystem',
-            'description' => $lang->rpgsystem_description,
-        ];
-
-        $page->output_nav_tabs($sub_tabs, 'overview');
-        echo '<p>' . $lang->rpgsystem_description . '</p>';
-        $page->output_footer();
-        exit;
-    }
 
     if ($mybb->input['module'] === 'rpgsystem-charactercreation') {
         $page->add_breadcrumb_item($lang->rpgsystem_character_creation, 'index.php?module=rpgsystem-charactercreation');
@@ -622,27 +597,6 @@ function rpgsystem_character_postbit(&$post)
     }
     $url = $mybb->settings['rpgsystem_character_url'];
     $post['rpgcharacter'] = '<a href="' . htmlspecialchars_uni($url) . '?uid=' . (int)$post['uid'] . '" class="rpg-character-button" target="_blank">' . htmlspecialchars_uni($lang->rpgsystem_character_button) . '</a>';
-    $post['postdate'] .= ' <span class="rpg-count">Количество символов: ' . $chars . '</span>';
 
-    global $mybb, $lang, $page;
-
-    if ($mybb->input['module'] !== 'rpgsystem') {
-        return;
-    }
-
-    $page->add_breadcrumb_item($lang->rpgsystem_name, 'index.php?module=rpgsystem');
-    $page->output_header($lang->rpgsystem_name);
-
-    $sub_tabs['overview'] = [
-        'title' => $lang->rpgsystem_name,
-        'link' => 'index.php?module=rpgsystem',
-        'description' => $lang->rpgsystem_description,
-    ];
-
-    $page->output_nav_tabs($sub_tabs, 'overview');
-    echo '<p>' . $lang->rpgsystem_description . '</p>';
-    $page->output_footer();
-    exit;
 }
 
-require_once __DIR__ . '/../../rpgsystem/core.php';
