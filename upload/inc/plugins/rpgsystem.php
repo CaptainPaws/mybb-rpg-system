@@ -51,6 +51,7 @@ function rpgsystem_deactivate()
     // Remove templates or settings here
 }
 
+
 require_once __DIR__ . '/rpgsystem/core.php';
 require_once __DIR__ . '/rpgsystem/modules/CharacterCreation.php';
 require_once __DIR__ . '/rpgsystem/modules/CharacterSheet.php';
@@ -66,6 +67,10 @@ require_once __DIR__ . '/rpgsystem/modules/Battle.php';
 require_once __DIR__ . '/rpgsystem/modules/Scenes.php';
 require_once __DIR__ . '/rpgsystem/modules/Quests.php';
 require_once __DIR__ . '/rpgsystem/modules/Toolbar.php';
+require_once __DIR__ . '/rpgsystem/core.php';
+require_once __DIR__ . '/rpgsystem/modules/CharacterCreation.php';
+require_once __DIR__ . '/rpgsystem/modules/CharacterSheet.php';
+
 
 use RPGSystem\Core;
 use RPGSystem\Modules\CharacterCreation;
@@ -83,6 +88,7 @@ use RPGSystem\Modules\Scenes;
 use RPGSystem\Modules\Quests;
 use RPGSystem\Modules\Toolbar;
 
+
 $core = Core::getInstance();
 $core->registerModule('character_creation', new CharacterCreation());
 $core->registerModule('character_sheet', new CharacterSheet());
@@ -98,6 +104,7 @@ $core->registerModule('battle', new Battle());
 $core->registerModule('scenes', new Scenes());
 $core->registerModule('quests', new Quests());
 $core->registerModule('toolbar', new Toolbar());
+
 
 $plugins->add_hook('admin_home_menu', 'rpgsystem_admin_menu');
 $plugins->add_hook('admin_load', 'rpgsystem_admin_page');
@@ -134,3 +141,7 @@ function rpgsystem_admin_page(): void
     $page->output_footer();
     exit;
 }
+
+
+require_once __DIR__ . '/../../rpgsystem/core.php';
+
