@@ -25,6 +25,116 @@ function rpgsystem_install()
             `name` VARCHAR(255) NOT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     }
+
+    if (!$db->table_exists('rpgsystem_currencies')) {
+        $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "rpgsystem_currencies` (
+            `cid` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `name` VARCHAR(100) NOT NULL,
+            `prefix` VARCHAR(16) NOT NULL DEFAULT '',
+            `suffix` VARCHAR(16) NOT NULL DEFAULT ''
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    }
+
+    if (!$db->table_exists('rpgsystem_currency_balances')) {
+        $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "rpgsystem_currency_balances` (
+            `uid` INT UNSIGNED NOT NULL,
+            `cid` INT UNSIGNED NOT NULL,
+            `balance` INT NOT NULL DEFAULT 0,
+            PRIMARY KEY(`uid`,`cid`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    }
+
+    if (!$db->table_exists('rpgsystem_currency_queue')) {
+        $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "rpgsystem_currency_queue` (
+            `qid` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `uid` INT UNSIGNED NOT NULL,
+            `cid` INT UNSIGNED NOT NULL,
+            `amount` INT NOT NULL,
+            `reason` VARCHAR(255) NOT NULL DEFAULT '',
+            `created` INT UNSIGNED NOT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    }
+
+    // Settings
+    $group = [
+        'name' => 'rpgsystem_currency',
+        'title' => 'RPG System Currency',
+        'description' => 'Currency settings',
+        'disporder' => 5,
+        'isdefault' => 0
+    ];
+    $db->insert_query('settinggroups', $group);
+    $gid = $db->insert_id();
+
+    $settings = [
+        [
+            'name' => 'rpgsystem_currency_register_amount',
+            'title' => 'Amount on register',
+            'description' => 'Currency granted on registration',
+            'optionscode' => 'text',
+            'value' => '0',
+            'disporder' => 1,
+            'gid' => $gid
+        ],
+        [
+            'name' => 'rpgsystem_currency_activation_amount',
+            'title' => 'Amount on activation',
+            'description' => 'Currency granted when account is activated',
+            'optionscode' => 'text',
+            'value' => '0',
+            'disporder' => 2,
+            'gid' => $gid
+        ],
+        [
+            'name' => 'rpgsystem_currency_thread_amount',
+            'title' => 'Amount on new thread',
+            'description' => 'Currency granted when creating a thread',
+            'optionscode' => 'text',
+            'value' => '0',
+            'disporder' => 3,
+            'gid' => $gid
+        ],
+        [
+            'name' => 'rpgsystem_currency_post_amount',
+            'title' => 'Amount on new post',
+            'description' => 'Currency granted when creating a post',
+            'optionscode' => 'text',
+            'value' => '0',
+            'disporder' => 4,
+            'gid' => $gid
+        ],
+        [
+            'name' => 'rpgsystem_currency_chars_per_coin',
+            'title' => 'Characters per coin',
+            'description' => 'Characters required to grant one coin',
+            'optionscode' => 'text',
+            'value' => '200',
+            'disporder' => 5,
+            'gid' => $gid
+        ],
+        [
+            'name' => 'rpgsystem_currency_forums',
+            'title' => 'Forums for char count',
+            'description' => 'Comma separated forum IDs',
+            'optionscode' => 'text',
+            'value' => '',
+            'disporder' => 6,
+            'gid' => $gid
+        ],
+        [
+            'name' => 'rpgsystem_currency_groups',
+            'title' => 'Groups allowed to edit balances',
+            'description' => 'Comma separated group IDs',
+            'optionscode' => 'text',
+            'value' => '',
+            'disporder' => 7,
+            'gid' => $gid
+        ]
+    ];
+    foreach ($settings as $setting) {
+        $db->insert_query('settings', $setting);
+    }
+    rebuild_settings();
 }
 
 function rpgsystem_is_installed(): bool
@@ -39,6 +149,19 @@ function rpgsystem_uninstall()
     if ($db->table_exists('rpgsystem_modules')) {
         $db->write_query("DROP TABLE `" . TABLE_PREFIX . "rpgsystem_modules`");
     }
+    if ($db->table_exists('rpgsystem_currencies')) {
+        $db->write_query("DROP TABLE `" . TABLE_PREFIX . "rpgsystem_currencies`");
+    }
+    if ($db->table_exists('rpgsystem_currency_balances')) {
+        $db->write_query("DROP TABLE `" . TABLE_PREFIX . "rpgsystem_currency_balances`");
+    }
+    if ($db->table_exists('rpgsystem_currency_queue')) {
+        $db->write_query("DROP TABLE `" . TABLE_PREFIX . "rpgsystem_currency_queue`");
+    }
+
+    $db->delete_query('settinggroups', "name='rpgsystem_currency'");
+    $db->delete_query('settings', "name LIKE 'rpgsystem_currency_%'");
+    rebuild_settings();
 }
 
 function rpgsystem_activate()
@@ -76,18 +199,140 @@ use RPGSystem\Core;
 use RPGSystem\Modules\CharacterCreation;
 use RPGSystem\Modules\CharacterSheet;
 use RPGSystem\Modules\Attributes;
-use RPGSystem\Modules\Items;
-use RPGSystem\Modules\Inventory;
-use RPGSystem\Modules\Currency;
-use RPGSystem\Modules\Shop;
-use RPGSystem\Modules\Crafting;
-use RPGSystem\Modules\Loot;
-use RPGSystem\Modules\Bestiary;
-use RPGSystem\Modules\Battle;
-use RPGSystem\Modules\Scenes;
-use RPGSystem\Modules\Quests;
-use RPGSystem\Modules\Toolbar;
+$plugins->add_hook('member_do_register_end', 'rpgsystem_currency_register');
+$plugins->add_hook('member_activate_account', 'rpgsystem_currency_activation');
+$plugins->add_hook('datahandler_post_insert_thread', 'rpgsystem_currency_thread');
+$plugins->add_hook('datahandler_post_insert_post', 'rpgsystem_currency_post');
+    $sub_menu[] = [
+        'id' => 'rpgsystem-currency',
+        'title' => $lang->rpgsystem_currency,
+        'link' => 'index.php?module=rpgsystem-currency'
+    ];
+    global $mybb, $lang, $page, $db;
 
+    if ($mybb->input['module'] === 'rpgsystem') {
+        $page->add_breadcrumb_item($lang->rpgsystem_name, 'index.php?module=rpgsystem');
+        $page->output_header($lang->rpgsystem_name);
+
+        $sub_tabs['overview'] = [
+            'title' => $lang->rpgsystem_name,
+            'link' => 'index.php?module=rpgsystem',
+            'description' => $lang->rpgsystem_description,
+        ];
+
+        $page->output_nav_tabs($sub_tabs, 'overview');
+        echo '<p>' . $lang->rpgsystem_description . '</p>';
+        $page->output_footer();
+        exit;
+    }
+
+    if ($mybb->input['module'] === 'rpgsystem-currency') {
+        $page->add_breadcrumb_item($lang->rpgsystem_currency, 'index.php?module=rpgsystem-currency');
+        $page->output_header($lang->rpgsystem_currency);
+
+        $sub_tabs['currency'] = [
+            'title' => $lang->rpgsystem_currency,
+            'link' => 'index.php?module=rpgsystem-currency'
+        ];
+
+        $page->output_nav_tabs($sub_tabs, 'currency');
+
+        if ($mybb->request_method === 'post') {
+            $new = [
+                'name' => $db->escape_string($mybb->input['name'] ?? ''),
+                'prefix' => $db->escape_string($mybb->input['prefix'] ?? ''),
+                'suffix' => $db->escape_string($mybb->input['suffix'] ?? '')
+            ];
+            if ($new['name'] !== '') {
+                $db->insert_query('rpgsystem_currencies', $new);
+                flash_message('Currency created', 'success');
+            }
+        }
+
+        $form = new Form('index.php?module=rpgsystem-currency', 'post');
+        $form_container = new FormContainer($lang->rpgsystem_currency_add);
+        $form_container->output_row($lang->rpgsystem_currency_name, '', $form->generate_text_box('name'), 'name');
+        $form_container->output_row($lang->rpgsystem_currency_prefix, '', $form->generate_text_box('prefix'), 'prefix');
+        $form_container->output_row($lang->rpgsystem_currency_suffix, '', $form->generate_text_box('suffix'), 'suffix');
+        $form_container->end();
+        $buttons[] = $form->generate_submit_button($lang->rpgsystem_currency_add);
+        $form->output_submit_wrapper($buttons);
+        $form->end();
+        $table = new Table;
+        $table->construct_header($lang->rpgsystem_currency_name);
+        $table->construct_header($lang->rpgsystem_currency_prefix);
+        $table->construct_header($lang->rpgsystem_currency_suffix);
+
+        $query = $db->simple_select('rpgsystem_currencies');
+        while ($cur = $db->fetch_array($query)) {
+            $table->construct_cell(htmlspecialchars_uni($cur['name']));
+            $table->construct_cell(htmlspecialchars_uni($cur['prefix']));
+            $table->construct_cell(htmlspecialchars_uni($cur['suffix']));
+            $table->construct_row();
+        }
+
+        if ($table->num_rows() > 0) {
+            $table->output($lang->rpgsystem_currency);
+        }
+
+        $page->output_footer();
+        exit;
+    }
+}
+
+function rpgsystem_currency_register()
+{
+    global $mybb;
+    $amount = (int)$mybb->settings['rpgsystem_currency_register_amount'];
+    if ($amount <= 0) {
+    $currency = Core::getInstance()->getModule('currency');
+    if ($currency) {
+        $currency->addBalance($mybb->user['uid'], 1, $amount);
+    }
+}
+function rpgsystem_currency_activation()
+{
+    global $mybb;
+    $amount = (int)$mybb->settings['rpgsystem_currency_activation_amount'];
+    if ($amount <= 0) {
+        return;
+    }
+    $currency = Core::getInstance()->getModule('currency');
+    if ($currency) {
+        $currency->addBalance($mybb->user['uid'], 1, $amount);
+    }
+}
+function rpgsystem_currency_thread(&$thread)
+{
+    global $mybb;
+    $amount = (int)$mybb->settings['rpgsystem_currency_thread_amount'];
+    if ($amount <= 0) {
+        return;
+    }
+    $currency = Core::getInstance()->getModule('currency');
+    if ($currency) {
+        $currency->addBalance($thread['uid'], 1, $amount);
+    }
+}
+function rpgsystem_currency_post(&$post)
+{
+    global $mybb;
+    $amount = (int)$mybb->settings['rpgsystem_currency_post_amount'];
+    $chars_per_coin = max(1, (int)$mybb->settings['rpgsystem_currency_chars_per_coin']);
+    $forums = array_filter(array_map('intval', explode(',', $mybb->settings['rpgsystem_currency_forums'])));
+    if (!empty($forums) && !in_array((int)$post['fid'], $forums, true)) {
+        return;
+    }
+    $earned = $amount;
+    $char_bonus = floor(strlen($post['message']) / $chars_per_coin);
+    $earned += $char_bonus;
+    if ($earned <= 0) {
+        return;
+    }
+    $currency = Core::getInstance()->getModule('currency');
+    if ($currency) {
+        $currency->addBalance($post['uid'], 1, $earned);
+    }
 
 $core = Core::getInstance();
 $core->registerModule('character_creation', new CharacterCreation());
