@@ -51,4 +51,54 @@ function rpgsystem_deactivate()
     // Remove templates or settings here
 }
 
+
+require_once __DIR__ . '/rpgsystem/core.php';
+require_once __DIR__ . '/rpgsystem/modules/CharacterCreation.php';
+require_once __DIR__ . '/rpgsystem/modules/CharacterSheet.php';
+
+use RPGSystem\Core;
+use RPGSystem\Modules\CharacterCreation;
+use RPGSystem\Modules\CharacterSheet;
+
+$core = Core::getInstance();
+$core->registerModule('character_creation', new CharacterCreation());
+$core->registerModule('character_sheet', new CharacterSheet());
+
+$plugins->add_hook('admin_home_menu', 'rpgsystem_admin_menu');
+$plugins->add_hook('admin_load', 'rpgsystem_admin_page');
+
+function rpgsystem_admin_menu(array &$sub_menu): void
+{
+    global $lang;
+    $sub_menu[] = [
+        'id' => 'rpgsystem',
+        'title' => $lang->rpgsystem_name,
+        'link' => 'index.php?module=rpgsystem'
+    ];
+}
+
+function rpgsystem_admin_page(): void
+{
+    global $mybb, $lang, $page;
+
+    if ($mybb->input['module'] !== 'rpgsystem') {
+        return;
+    }
+
+    $page->add_breadcrumb_item($lang->rpgsystem_name, 'index.php?module=rpgsystem');
+    $page->output_header($lang->rpgsystem_name);
+
+    $sub_tabs['overview'] = [
+        'title' => $lang->rpgsystem_name,
+        'link' => 'index.php?module=rpgsystem',
+        'description' => $lang->rpgsystem_description,
+    ];
+
+    $page->output_nav_tabs($sub_tabs, 'overview');
+    echo '<p>' . $lang->rpgsystem_description . '</p>';
+    $page->output_footer();
+    exit;
+}
+=======
 require_once __DIR__ . '/../../rpgsystem/core.php';
+
