@@ -161,6 +161,49 @@ function rpgsystem_install()
         'disporder' => 1,
         'gid' => $gid
     ]);
+
+    $group = [
+        'name' => 'rpgsystem_character',
+        'title' => 'RPG System Character Creation',
+        'description' => 'Character creation settings',
+        'disporder' => 7,
+        'isdefault' => 0
+    ];
+    $db->insert_query('settinggroups', $group);
+    $gid = $db->insert_id();
+    $settings = [
+        [
+            'name' => 'rpgsystem_character_title',
+            'title' => 'Form Title',
+            'description' => '',
+            'optionscode' => 'text',
+            'value' => 'Шаблон анкеты',
+            'disporder' => 1,
+            'gid' => $gid
+        ],
+        [
+            'name' => 'rpgsystem_character_url',
+            'title' => 'Form URL',
+            'description' => '',
+            'optionscode' => 'text',
+            'value' => 'charactercreation.php',
+            'disporder' => 2,
+            'gid' => $gid
+        ],
+        [
+            'name' => 'rpgsystem_character_fields',
+            'title' => 'Profile Fields',
+            'description' => 'Comma separated field IDs',
+            'optionscode' => 'text',
+            'value' => '',
+            'disporder' => 3,
+            'gid' => $gid
+        ]
+    ];
+    foreach ($settings as $setting) {
+        $db->insert_query('settings', $setting);
+    }
+
     rebuild_settings();
 }
 
@@ -194,12 +237,18 @@ function rpgsystem_uninstall()
     $db->delete_query('settings', "name LIKE 'rpgsystem_currency_%'");
     $db->delete_query('settinggroups', "name='rpgsystem_counter'");
     $db->delete_query('settings', "name LIKE 'rpgsystem_counter_%'");
+    $db->delete_query('settinggroups', "name='rpgsystem_character'");
+    $db->delete_query('settings', "name LIKE 'rpgsystem_character_%'");
+
     rebuild_settings();
 }
 
 function rpgsystem_activate()
 {
     require_once MYBB_ROOT . 'inc/adminfunctions_templates.php';
+    find_replace_templatesets('postbit', '#\{\$post\[\'postdate\'\]\}</span>#', '{\$post[\'postdate\']}</span> {\$post[\'rpgcharacter\']} <span class="rpg-count">{\$post[\'rpg_count\']}</span>');
+    find_replace_templatesets('newreply', '#</textarea>#', '</textarea><span id="rpg-counter"></span>');
+    find_replace_templatesets('newthread', '#</textarea>#', '</textarea><span id="rpg-counter"></span>');
     find_replace_templatesets('postbit', '#\{\$post\[\'postdate\'\]\}</span>#', '{\$post[\'postdate\']}</span> <span class="rpg-count">{\$post[\'rpg_count\']}</span>');
     find_replace_templatesets('newreply', '#</textarea>#', '</textarea><span id="rpg-counter"></span>');
     find_replace_templatesets('newthread', '#</textarea>#', '</textarea><span id="rpg-counter"></span>');
@@ -209,13 +258,12 @@ function rpgsystem_activate()
 function rpgsystem_deactivate()
 {
     require_once MYBB_ROOT . 'inc/adminfunctions_templates.php';
+    find_replace_templatesets('postbit', '# \{\$post\[\'rpgcharacter\'\]\} <span class="rpg-count">\{\$post\[\'rpg_count\'\]\}</span>#', '', 0);
     find_replace_templatesets('postbit', '# <span class="rpg-count">\{\$post\[\'rpg_count\'\]\}</span>#', '', 0);
     find_replace_templatesets('newreply', '#<span id="rpg-counter"></span>#', '', 0);
     find_replace_templatesets('newthread', '#<span id="rpg-counter"></span>#', '', 0);
 }
 
-    // Remove templates or settings here
-}
 
 require_once __DIR__ . '/rpgsystem/core.php';
 require_once __DIR__ . '/rpgsystem/modules/CharacterCreation.php';
@@ -254,7 +302,6 @@ use RPGSystem\Modules\Quests;
 use RPGSystem\Modules\Toolbar;
 use RPGSystem\Modules\Counter;
 
-
 $core = Core::getInstance();
 $core->registerModule('character_creation', new CharacterCreation());
 $core->registerModule('character_sheet', new CharacterSheet());
@@ -282,6 +329,8 @@ $plugins->add_hook('datahandler_post_insert_post', 'rpgsystem_counter_post');
 $plugins->add_hook('newreply_end', 'rpgsystem_counter_form');
 $plugins->add_hook('newthread_end', 'rpgsystem_counter_form');
 $plugins->add_hook('postbit', 'rpgsystem_counter_postbit');
+$plugins->add_hook('postbit', 'rpgsystem_currency_postbit');
+$plugins->add_hook('postbit', 'rpgsystem_character_postbit');
 $plugins->add_hook('admin_home_menu', 'rpgsystem_admin_menu');
 $plugins->add_hook('admin_load', 'rpgsystem_admin_page');
 
@@ -292,6 +341,12 @@ function rpgsystem_admin_menu(array &$sub_menu): void
         'id' => 'rpgsystem',
         'title' => $lang->rpgsystem_name,
         'link' => 'index.php?module=rpgsystem'
+    ];
+
+    $sub_menu[] = [
+        'id' => 'rpgsystem-charactercreation',
+        'title' => $lang->rpgsystem_character_creation,
+        'link' => 'index.php?module=rpgsystem-charactercreation'
     ];
 
     $sub_menu[] = [
@@ -322,6 +377,53 @@ function rpgsystem_admin_page(): void
 
         $page->output_nav_tabs($sub_tabs, 'overview');
         echo '<p>' . $lang->rpgsystem_description . '</p>';
+        $page->output_footer();
+        exit;
+    }
+
+    if ($mybb->input['module'] === 'rpgsystem-charactercreation') {
+        $page->add_breadcrumb_item($lang->rpgsystem_character_creation, 'index.php?module=rpgsystem-charactercreation');
+        $page->output_header($lang->rpgsystem_character_creation);
+
+        $sub_tabs['charactercreation'] = [
+            'title' => $lang->rpgsystem_character_creation,
+            'link'  => 'index.php?module=rpgsystem-charactercreation'
+        ];
+
+        $page->output_nav_tabs($sub_tabs, 'charactercreation');
+
+        if ($mybb->request_method === 'post') {
+            $title = $db->escape_string($mybb->input['title'] ?? '');
+            $url = $db->escape_string($mybb->input['url'] ?? '');
+            $fields = array_map('intval', $mybb->input['fields'] ?? []);
+            $db->update_query('settings', ['value' => $title], "name='rpgsystem_character_title'");
+            $db->update_query('settings', ['value' => $url], "name='rpgsystem_character_url'");
+            $db->update_query('settings', ['value' => implode(',', $fields)], "name='rpgsystem_character_fields'");
+            rebuild_settings();
+            flash_message($lang->rpgsystem_saved, 'success');
+        }
+
+        $selected = array_filter(array_map('intval', explode(',', $mybb->settings['rpgsystem_character_fields'])));
+        $title = $mybb->settings['rpgsystem_character_title'];
+        $url = $mybb->settings['rpgsystem_character_url'];
+
+        $form = new Form('index.php?module=rpgsystem-charactercreation', 'post');
+        $form_container = new FormContainer($lang->rpgsystem_character_creation);
+        $form_container->output_row($lang->rpgsystem_character_title, '', $form->generate_text_box('title', $title), 'title');
+        $form_container->output_row($lang->rpgsystem_character_url, '', $form->generate_text_box('url', $url), 'url');
+
+        $fields_html = '';
+        $query = $db->simple_select('profilefields', 'fid,name');
+        while ($field = $db->fetch_array($query)) {
+            $fields_html .= '<label><input type="checkbox" name="fields[]" value="'.$field['fid'].'"'.(in_array((int)$field['fid'], $selected, true) ? ' checked="checked"' : '').'> '.htmlspecialchars_uni($field['name']).'</label><br />';
+        }
+        $fields_html .= '<br><a href="index.php?module=config-profile_fields">'.$lang->rpgsystem_manage_profilefields.'</a>';
+        $form_container->output_row($lang->rpgsystem_character_fields, '', $fields_html, 'fields');
+        $form_container->end();
+        $buttons[] = $form->generate_submit_button($lang->save);
+        $form->output_submit_wrapper($buttons);
+        $form->end();
+
         $page->output_footer();
         exit;
     }
@@ -499,6 +601,30 @@ function rpgsystem_counter_form()
 function rpgsystem_counter_postbit(&$post)
 {
     $chars = mb_strlen(strip_tags($post['message']));
+    $post['rpg_count'] = $chars;
+}
+
+function rpgsystem_currency_postbit(&$post)
+{
+    $currency = Core::getInstance()->getModule('currency');
+    if (!$currency) {
+        return;
+    }
+    $balance = $currency->getBalance((int)$post['uid'], 1);
+    $info = $currency->getCurrencyInfo(1) ?? ['prefix' => '', 'suffix' => ''];
+    $post['rpgcurrency'] = $info['prefix'] . $balance . $info['suffix'];
+}
+
+function rpgsystem_character_postbit(&$post)
+{
+    global $mybb, $lang;
+    if (!isset($lang->rpgsystem_character_button)) {
+        $lang->load('rpgsystem');
+    }
+    $url = $mybb->settings['rpgsystem_character_url'];
+    $post['rpgcharacter'] = '<a href="' . htmlspecialchars_uni($url) . '?uid=' . (int)$post['uid'] . '" class="rpg-character-button" target="_blank">' . htmlspecialchars_uni($lang->rpgsystem_character_button) . '</a>';
+}
+
     $post['postdate'] .= ' <span class="rpg-count">Количество символов: ' . $chars . '</span>';
 }
 

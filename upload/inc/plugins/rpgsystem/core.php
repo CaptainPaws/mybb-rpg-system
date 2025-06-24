@@ -4,7 +4,6 @@ namespace RPGSystem;
 class Core
 {
     private static ?Core $instance = null;
-
     /** @var array<string,object> */
     private array $modules = [];
 
