@@ -594,5 +594,3 @@ function rpgsystem_character_postbit(&$post)
     $post['rpgcharacter'] = '<a href="' . htmlspecialchars_uni($url) . '?uid=' . (int)$post['uid'] . '" class="rpg-character-button" target="_blank">' . htmlspecialchars_uni($lang->rpgsystem_character_button) . '</a>';
 }
 
-?>
-
