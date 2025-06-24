@@ -9,7 +9,7 @@ function rpgsystem_info(): array
         'name' => 'RPG System',
         'description' => 'Modular RPG system providing items, inventory, currency, store, crafting and more.',
         'website' => 'https://example.com',
-        'author' => 'RPG System Team',
+        'author' => 'CaptainPaws',
         'authorsite' => 'https://example.com',
         'version' => '0.1.0',
         'compatibility' => '18*'
@@ -207,6 +207,7 @@ function rpgsystem_install()
     rebuild_settings();
 }
 
+
 function rpgsystem_is_installed(): bool
 {
     global $db;
@@ -281,9 +282,6 @@ require_once __DIR__ . '/rpgsystem/modules/Scenes.php';
 require_once __DIR__ . '/rpgsystem/modules/Quests.php';
 require_once __DIR__ . '/rpgsystem/modules/Toolbar.php';
 require_once __DIR__ . '/rpgsystem/modules/Counter.php';
-require_once __DIR__ . '/rpgsystem/core.php';
-require_once __DIR__ . '/rpgsystem/modules/CharacterCreation.php';
-require_once __DIR__ . '/rpgsystem/modules/CharacterSheet.php';
 
 
 use RPGSystem\Core;
@@ -332,8 +330,6 @@ $plugins->add_hook('newthread_end', 'rpgsystem_counter_form');
 $plugins->add_hook('postbit', 'rpgsystem_counter_postbit');
 $plugins->add_hook('postbit', 'rpgsystem_currency_postbit');
 $plugins->add_hook('postbit', 'rpgsystem_character_postbit');
-$plugins->add_hook('admin_home_menu', 'rpgsystem_admin_menu');
-$plugins->add_hook('admin_load', 'rpgsystem_admin_page');
 
 
 function rpgsystem_admin_menu(array &$sub_menu): void
@@ -517,6 +513,7 @@ function rpgsystem_admin_page(): void
         $page->output_footer();
         exit;
     }
+
 }
 
 function rpgsystem_currency_register()
@@ -625,11 +622,7 @@ function rpgsystem_character_postbit(&$post)
     }
     $url = $mybb->settings['rpgsystem_character_url'];
     $post['rpgcharacter'] = '<a href="' . htmlspecialchars_uni($url) . '?uid=' . (int)$post['uid'] . '" class="rpg-character-button" target="_blank">' . htmlspecialchars_uni($lang->rpgsystem_character_button) . '</a>';
-}
-
-
     $post['postdate'] .= ' <span class="rpg-count">Количество символов: ' . $chars . '</span>';
-}
 
     global $mybb, $lang, $page;
 
@@ -653,5 +646,3 @@ function rpgsystem_character_postbit(&$post)
 }
 
 require_once __DIR__ . '/../../rpgsystem/core.php';
-
-
