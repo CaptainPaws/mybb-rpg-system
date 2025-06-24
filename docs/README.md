@@ -4,6 +4,25 @@
 
 ## Возможности
 
+## Модули ядра
+
+Ядро плагина загружает следующие модули:
+
+- Attributes
+- Items
+- Inventory
+- Currency
+- Shop
+- Crafting
+- Loot
+- Bestiary
+- Battle
+- Scenes
+- Quests
+- RPG Toolbar
+- Character Creation
+- Character Sheet
+
 3d1uxj-codex/написание-документации-для-rpg-system-в-mybb-1.8+
 - **Характеристики** — атрибуты (сила, ловкость, телосложение, интеллект,
   харизма, мудрость), статы (очки здоровья, очки энергии, очки брони, урон),
