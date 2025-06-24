@@ -55,14 +55,56 @@ function rpgsystem_deactivate()
 require_once __DIR__ . '/rpgsystem/core.php';
 require_once __DIR__ . '/rpgsystem/modules/CharacterCreation.php';
 require_once __DIR__ . '/rpgsystem/modules/CharacterSheet.php';
+require_once __DIR__ . '/rpgsystem/modules/Attributes.php';
+require_once __DIR__ . '/rpgsystem/modules/Items.php';
+require_once __DIR__ . '/rpgsystem/modules/Inventory.php';
+require_once __DIR__ . '/rpgsystem/modules/Currency.php';
+require_once __DIR__ . '/rpgsystem/modules/Shop.php';
+require_once __DIR__ . '/rpgsystem/modules/Crafting.php';
+require_once __DIR__ . '/rpgsystem/modules/Loot.php';
+require_once __DIR__ . '/rpgsystem/modules/Bestiary.php';
+require_once __DIR__ . '/rpgsystem/modules/Battle.php';
+require_once __DIR__ . '/rpgsystem/modules/Scenes.php';
+require_once __DIR__ . '/rpgsystem/modules/Quests.php';
+require_once __DIR__ . '/rpgsystem/modules/Toolbar.php';
+require_once __DIR__ . '/rpgsystem/core.php';
+require_once __DIR__ . '/rpgsystem/modules/CharacterCreation.php';
+require_once __DIR__ . '/rpgsystem/modules/CharacterSheet.php';
+
 
 use RPGSystem\Core;
 use RPGSystem\Modules\CharacterCreation;
 use RPGSystem\Modules\CharacterSheet;
+use RPGSystem\Modules\Attributes;
+use RPGSystem\Modules\Items;
+use RPGSystem\Modules\Inventory;
+use RPGSystem\Modules\Currency;
+use RPGSystem\Modules\Shop;
+use RPGSystem\Modules\Crafting;
+use RPGSystem\Modules\Loot;
+use RPGSystem\Modules\Bestiary;
+use RPGSystem\Modules\Battle;
+use RPGSystem\Modules\Scenes;
+use RPGSystem\Modules\Quests;
+use RPGSystem\Modules\Toolbar;
+
 
 $core = Core::getInstance();
 $core->registerModule('character_creation', new CharacterCreation());
 $core->registerModule('character_sheet', new CharacterSheet());
+$core->registerModule('attributes', new Attributes());
+$core->registerModule('items', new Items());
+$core->registerModule('inventory', new Inventory());
+$core->registerModule('currency', new Currency());
+$core->registerModule('shop', new Shop());
+$core->registerModule('crafting', new Crafting());
+$core->registerModule('loot', new Loot());
+$core->registerModule('bestiary', new Bestiary());
+$core->registerModule('battle', new Battle());
+$core->registerModule('scenes', new Scenes());
+$core->registerModule('quests', new Quests());
+$core->registerModule('toolbar', new Toolbar());
+
 
 $plugins->add_hook('admin_home_menu', 'rpgsystem_admin_menu');
 $plugins->add_hook('admin_load', 'rpgsystem_admin_page');
@@ -99,6 +141,7 @@ function rpgsystem_admin_page(): void
     $page->output_footer();
     exit;
 }
+
 
 require_once __DIR__ . '/../../rpgsystem/core.php';
 

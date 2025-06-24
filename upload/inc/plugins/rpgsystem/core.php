@@ -4,7 +4,7 @@ namespace RPGSystem;
 class Core
 {
     private static ?Core $instance = null;
-
+  
     /** @var array<string,object> */
     private array $modules = [];
 
@@ -12,10 +12,10 @@ class Core
     {
         // Modules can be loaded here in the future
 
-
     private function __construct()
     {
         // Load modules here
+
 
     }
 
@@ -29,7 +29,6 @@ class Core
 
     public function registerModule(string $name, object $module): void
     {
-
         $this->modules[$name] = $module;
     }
 
@@ -38,6 +37,5 @@ class Core
         return $this->modules[$name] ?? null;
 
         // Register a module for later use
-
     }
 }
