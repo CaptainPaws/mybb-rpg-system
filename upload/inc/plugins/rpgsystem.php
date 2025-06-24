@@ -176,6 +176,7 @@ function rpgsystem_uninstall()
     if ($db->table_exists('rpgsystem_modules')) {
         $db->write_query("DROP TABLE `" . TABLE_PREFIX . "rpgsystem_modules`");
     }
+
     if ($db->table_exists('rpgsystem_currencies')) {
         $db->write_query("DROP TABLE `" . TABLE_PREFIX . "rpgsystem_currencies`");
     }
@@ -202,6 +203,7 @@ function rpgsystem_activate()
     find_replace_templatesets('postbit', '#\{\$post\[\'postdate\'\]\}</span>#', '{\$post[\'postdate\']}</span> <span class="rpg-count">{\$post[\'rpg_count\']}</span>');
     find_replace_templatesets('newreply', '#</textarea>#', '</textarea><span id="rpg-counter"></span>');
     find_replace_templatesets('newthread', '#</textarea>#', '</textarea><span id="rpg-counter"></span>');
+    // Add templates or settings here
 }
 
 function rpgsystem_deactivate()
@@ -210,6 +212,9 @@ function rpgsystem_deactivate()
     find_replace_templatesets('postbit', '# <span class="rpg-count">\{\$post\[\'rpg_count\'\]\}</span>#', '', 0);
     find_replace_templatesets('newreply', '#<span id="rpg-counter"></span>#', '', 0);
     find_replace_templatesets('newthread', '#<span id="rpg-counter"></span>#', '', 0);
+}
+
+    // Remove templates or settings here
 }
 
 require_once __DIR__ . '/rpgsystem/core.php';
@@ -228,6 +233,9 @@ require_once __DIR__ . '/rpgsystem/modules/Scenes.php';
 require_once __DIR__ . '/rpgsystem/modules/Quests.php';
 require_once __DIR__ . '/rpgsystem/modules/Toolbar.php';
 require_once __DIR__ . '/rpgsystem/modules/Counter.php';
+require_once __DIR__ . '/rpgsystem/core.php';
+require_once __DIR__ . '/rpgsystem/modules/CharacterCreation.php';
+require_once __DIR__ . '/rpgsystem/modules/CharacterSheet.php';
 
 use RPGSystem\Core;
 use RPGSystem\Modules\CharacterCreation;
@@ -245,6 +253,7 @@ use RPGSystem\Modules\Scenes;
 use RPGSystem\Modules\Quests;
 use RPGSystem\Modules\Toolbar;
 use RPGSystem\Modules\Counter;
+
 
 $core = Core::getInstance();
 $core->registerModule('character_creation', new CharacterCreation());
@@ -273,6 +282,8 @@ $plugins->add_hook('datahandler_post_insert_post', 'rpgsystem_counter_post');
 $plugins->add_hook('newreply_end', 'rpgsystem_counter_form');
 $plugins->add_hook('newthread_end', 'rpgsystem_counter_form');
 $plugins->add_hook('postbit', 'rpgsystem_counter_postbit');
+$plugins->add_hook('admin_home_menu', 'rpgsystem_admin_menu');
+$plugins->add_hook('admin_load', 'rpgsystem_admin_page');
 
 function rpgsystem_admin_menu(array &$sub_menu): void
 {
@@ -282,6 +293,7 @@ function rpgsystem_admin_menu(array &$sub_menu): void
         'title' => $lang->rpgsystem_name,
         'link' => 'index.php?module=rpgsystem'
     ];
+
     $sub_menu[] = [
         'id' => 'rpgsystem-currency',
         'title' => $lang->rpgsystem_currency,
@@ -489,4 +501,27 @@ function rpgsystem_counter_postbit(&$post)
     $chars = mb_strlen(strip_tags($post['message']));
     $post['postdate'] .= ' <span class="rpg-count">Количество символов: ' . $chars . '</span>';
 }
+
+    global $mybb, $lang, $page;
+
+    if ($mybb->input['module'] !== 'rpgsystem') {
+        return;
+    }
+
+    $page->add_breadcrumb_item($lang->rpgsystem_name, 'index.php?module=rpgsystem');
+    $page->output_header($lang->rpgsystem_name);
+
+    $sub_tabs['overview'] = [
+        'title' => $lang->rpgsystem_name,
+        'link' => 'index.php?module=rpgsystem',
+        'description' => $lang->rpgsystem_description,
+    ];
+
+    $page->output_nav_tabs($sub_tabs, 'overview');
+    echo '<p>' . $lang->rpgsystem_description . '</p>';
+    $page->output_footer();
+    exit;
+}
+
+require_once __DIR__ . '/../../rpgsystem/core.php';
 
