@@ -51,7 +51,7 @@ function rpgsystem_deactivate()
     // Remove templates or settings here
 }
 
-require_once __DIR__ . '/../../rpgsystem/core.php';
+require_once __DIR__ . '/rpgsystem/core.php';
 require_once __DIR__ . '/rpgsystem/modules/CharacterCreation.php';
 require_once __DIR__ . '/rpgsystem/modules/CharacterSheet.php';
 
