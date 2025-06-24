@@ -285,6 +285,7 @@ require_once __DIR__ . '/rpgsystem/core.php';
 require_once __DIR__ . '/rpgsystem/modules/CharacterCreation.php';
 require_once __DIR__ . '/rpgsystem/modules/CharacterSheet.php';
 
+
 use RPGSystem\Core;
 use RPGSystem\Modules\CharacterCreation;
 use RPGSystem\Modules\CharacterSheet;
@@ -333,6 +334,7 @@ $plugins->add_hook('postbit', 'rpgsystem_currency_postbit');
 $plugins->add_hook('postbit', 'rpgsystem_character_postbit');
 $plugins->add_hook('admin_home_menu', 'rpgsystem_admin_menu');
 $plugins->add_hook('admin_load', 'rpgsystem_admin_page');
+
 
 function rpgsystem_admin_menu(array &$sub_menu): void
 {
@@ -625,6 +627,7 @@ function rpgsystem_character_postbit(&$post)
     $post['rpgcharacter'] = '<a href="' . htmlspecialchars_uni($url) . '?uid=' . (int)$post['uid'] . '" class="rpg-character-button" target="_blank">' . htmlspecialchars_uni($lang->rpgsystem_character_button) . '</a>';
 }
 
+
     $post['postdate'] .= ' <span class="rpg-count">Количество символов: ' . $chars . '</span>';
 }
 
@@ -650,4 +653,5 @@ function rpgsystem_character_postbit(&$post)
 }
 
 require_once __DIR__ . '/../../rpgsystem/core.php';
+
 

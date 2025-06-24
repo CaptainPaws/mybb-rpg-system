@@ -15,6 +15,7 @@ class Core
     {
         // Load modules here
 
+
     }
 
     public static function getInstance(): Core
