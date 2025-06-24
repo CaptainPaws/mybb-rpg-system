@@ -57,5 +57,11 @@ class Currency
         global $db;
         $row = $db->fetch_array($db->simple_select('rpgsystem_currencies', '*', "cid={$cid}"));
         return $row ?: null;
+
+    public function getBalance(int $uid): int
+    {
+        // Return the currency balance for the user
+        return 0;
+
     }
 }

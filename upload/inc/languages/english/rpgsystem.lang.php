@@ -17,3 +17,4 @@ $l['rpgsystem_character_fields'] = 'Profile Fields';
 $l['rpgsystem_manage_profilefields'] = 'Manage profile fields';
 $l['rpgsystem_character_button'] = 'Character';
 $l['rpgsystem_saved'] = 'Settings saved';
+$l['rpgsystem_counter_words'] = 'Words';
