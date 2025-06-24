@@ -3,6 +3,7 @@ namespace RPGSystem\Modules;
 
 class Currency
 {
+
     public function getBalance(int $uid, int $cid = 1): int
     {
         global $db;
@@ -29,6 +30,7 @@ class Currency
     {
         $this->addBalance($uid, $cid, -$amount);
     }
+
 
     public function createCurrency(string $name, string $prefix = '', string $suffix = ''): int
     {

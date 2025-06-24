@@ -3,9 +3,7 @@ namespace RPGSystem\Modules;
 
 class CharacterCreation
 {
-    /**
-     * Get profile fields selected in settings.
-     */
+
     public function getFields(): array
     {
         global $mybb, $db;
@@ -18,15 +16,15 @@ class CharacterCreation
         while ($row = $db->fetch_array($query)) {
             $list[] = $row;
         }
+
         return $list;
     }
 
-    /**
-     * Render the form or view of character data.
-     */
+
     public function renderForm(int $uid, bool $viewOnly = false): string
     {
         global $db, $mybb, $lang;
+
         $fields = $this->getFields();
         if (empty($fields)) {
             return '';
@@ -53,12 +51,10 @@ class CharacterCreation
         return $html;
     }
 
-    /**
-     * Save data from form.
-     */
     public function saveForm(int $uid, array $input): void
     {
         global $db;
+
         $fields = $this->getFields();
         if (empty($fields)) {
             return;
@@ -71,6 +67,7 @@ class CharacterCreation
         $exists = $db->num_rows($db->simple_select('userfields', 'ufid', 'ufid=' . $uid)) > 0;
         if ($exists) {
             $db->update_query('userfields', $data, 'ufid=' . $uid);
+
         } else {
             $data['ufid'] = $uid;
             $db->insert_query('userfields', $data);

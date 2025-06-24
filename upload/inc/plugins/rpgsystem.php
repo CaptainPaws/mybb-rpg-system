@@ -9,7 +9,7 @@ function rpgsystem_info(): array
         'name' => 'RPG System',
         'description' => 'Modular RPG system providing items, inventory, currency, store, crafting and more.',
         'website' => 'https://example.com',
-        'author' => 'RPG System Team',
+        'author' => 'CaptainPaws',
         'authorsite' => 'https://example.com',
         'version' => '0.1.0',
         'compatibility' => '18*'
@@ -203,6 +203,7 @@ function rpgsystem_install()
     foreach ($settings as $setting) {
         $db->insert_query('settings', $setting);
     }
+
     rebuild_settings();
 }
 
@@ -237,6 +238,7 @@ function rpgsystem_uninstall()
     $db->delete_query('settings', "name LIKE 'rpgsystem_counter_%'");
     $db->delete_query('settinggroups', "name='rpgsystem_character'");
     $db->delete_query('settings', "name LIKE 'rpgsystem_character_%'");
+
     rebuild_settings();
 }
 
@@ -320,6 +322,7 @@ $plugins->add_hook('postbit', 'rpgsystem_counter_postbit');
 $plugins->add_hook('postbit', 'rpgsystem_currency_postbit');
 $plugins->add_hook('postbit', 'rpgsystem_character_postbit');
 
+
 function rpgsystem_admin_menu(array &$sub_menu): void
 {
     global $lang;
@@ -328,11 +331,13 @@ function rpgsystem_admin_menu(array &$sub_menu): void
         'title' => $lang->rpgsystem_name,
         'link' => 'index.php?module=rpgsystem'
     ];
+
     $sub_menu[] = [
         'id' => 'rpgsystem-charactercreation',
         'title' => $lang->rpgsystem_character_creation,
         'link' => 'index.php?module=rpgsystem-charactercreation'
     ];
+
     $sub_menu[] = [
         'id' => 'rpgsystem-currency',
         'title' => $lang->rpgsystem_currency,
@@ -348,7 +353,6 @@ function rpgsystem_admin_menu(array &$sub_menu): void
 function rpgsystem_admin_page(): void
 {
     global $mybb, $lang, $page, $db;
-
 
     if ($mybb->input['module'] === 'rpgsystem-charactercreation') {
         $page->add_breadcrumb_item($lang->rpgsystem_character_creation, 'index.php?module=rpgsystem-charactercreation');
@@ -484,6 +488,7 @@ function rpgsystem_admin_page(): void
         $page->output_footer();
         exit;
     }
+
 }
 
 function rpgsystem_currency_register()
@@ -592,5 +597,6 @@ function rpgsystem_character_postbit(&$post)
     }
     $url = $mybb->settings['rpgsystem_character_url'];
     $post['rpgcharacter'] = '<a href="' . htmlspecialchars_uni($url) . '?uid=' . (int)$post['uid'] . '" class="rpg-character-button" target="_blank">' . htmlspecialchars_uni($lang->rpgsystem_character_button) . '</a>';
+
 }
 
