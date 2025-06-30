@@ -10,7 +10,7 @@ function rpgsystem_info(): array
         'name' => 'RPG System',
         'description' => 'Модульная RPG-система: инвентарь, валюта, крафт и другое.',
         'website' => '',
-        'author' => 'Ханна и Джо',
+        'author' => 'Meowlins',
         'authorsite' => '',
         'version' => '1.0.0',
         'compatibility' => '18*'
