@@ -162,7 +162,7 @@ function rpgsystem_modcp_router()
 
     if ($mybb->input['action'] !== 'rpg_balance') return;
 
-    require_once MYBB_ROOT . 'inc/plugins/rpgsystem/modules/Currency/ModcpBalance.php';
+    require_once MYBB_ROOT . 'inc/plugins/rpgsystem/modules/currency/ModcpBalance.php';
 
     $modcp .= \RPGSystem\Modules\Currency\ModcpBalance::render();
 }
