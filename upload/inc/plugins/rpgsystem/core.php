@@ -42,11 +42,12 @@ class Core
 
         $query = $db->simple_select('rpgsystem_modules', '*', 'active=1');
         while ($mod = $db->fetch_array($query)) {
-            $folder = MYBB_ROOT . 'inc/plugins/rpgsystem/modules/' . $mod['name'] . '/';
-            $classFile = $folder . ucfirst($mod['name']) . '.php';
+            $folderName = strtolower($mod['name']);
+            $folder = MYBB_ROOT . 'inc/plugins/rpgsystem/modules/' . $folderName . '/';
+            $classFile = $folder . ucfirst($folderName) . '.php';
             if (file_exists($classFile)) {
                 require_once $classFile;
-                $className = "\\RPGSystem\\Modules\\" . ucfirst($mod['name']);
+                $className = "\\RPGSystem\\Modules\\" . ucfirst($folderName);
                 if (class_exists($className)) {
                     $this->registerModule($mod['name'], new $className());
                 }
