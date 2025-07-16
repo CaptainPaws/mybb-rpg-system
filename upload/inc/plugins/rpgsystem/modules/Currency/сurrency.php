@@ -1,28 +1,60 @@
 <?php
 
 namespace RPGSystem\Modules;
-
-use Core;
-
 if (!defined('IN_MYBB')) {
     die('Direct initialization of this file is not allowed.');
 }
+use Core;
 
-class Currency
+class currency
 {
     public function registerHooks(): void
     {
         global $plugins;
+        
 
         $plugins->add_hook('member_do_register_end', [$this, 'onRegister']);
         $plugins->add_hook('member_activate_accountactivated', [$this, 'onActivate']);
         $plugins->add_hook('datahandler_post_insert_thread', [$this, 'onThread']);
         $plugins->add_hook('datahandler_post_insert_post', [$this, 'onPost']);
         $plugins->add_hook('postbit', [$this, 'postbit_replace_currency']);
-        $plugins->add_hook('postbit_end', [$this, 'postbit_replace_currency']);
-        $plugins->add_hook('postbit_classic_end', [$this, 'postbit_replace_currency']);
-        $plugins->add_hook('modcp_start', [$this, 'modcp_balance_page']);
         $plugins->add_hook('modcp_nav', [$this, 'addModcpNav']);
+        $plugins->add_hook('postbit', [$this, 'postbit_collect']);
+        $plugins->add_hook('global_end', [$this, 'load_all_balances']);
+    }
+
+    public function postbit_collect(array &$post): void
+    {
+        $log = '[HOOK] postbit_collect called for UID: ' . ($post['uid'] ?? 'нет UID') . PHP_EOL;
+        file_put_contents(MYBB_ROOT . 'cache/postbit_debug.log', $log, FILE_APPEND);
+
+        if (empty($post['uid'])) {
+            return;
+        }
+
+        require_once __DIR__ . '/userbalance.php';
+        \RPGSystem\Modules\currency\userbalance::queueUser((int)$post['uid']);
+
+        \RPGSystem\Modules\currency\userbalance::loadBalances();
+        $post['rpg_currency_display'] = \RPGSystem\Modules\currency\userbalance::renderForUser((int)$post['uid']);
+    }
+
+
+
+    public function load_all_balances(): void
+    {
+        require_once __DIR__ . '/userbalance.php';
+        \RPGSystem\Modules\currency\userbalance::loadBalances();
+
+        global $postbits;
+        if (is_array($postbits)) {
+            foreach ($postbits as &$postbit) {
+                if (isset($postbit['uid'])) {
+                    $uid = (int)$postbit['uid'];
+                    $postbit['rpg_currency_display'] = \RPGSystem\Modules\currency\userbalance::renderForUser($uid);
+                }
+            }
+        }
     }
 
     public function onRegister(): void
@@ -57,13 +89,16 @@ class Currency
         }
     }
 
-    public function onPost(array &$post): void
+    public function onPost(\PostDataHandler $posthandler): void
     {
         global $db;
+
+        $post = $posthandler->data;
 
         $uid = (int)($post['uid'] ?? 0);
         $fid = (int)($post['fid'] ?? 0);
         $message = $post['message'] ?? '';
+
         if (!$uid || !$fid || !$message) return;
 
         $query = $db->simple_select('rpgsystem_currencies');
@@ -80,12 +115,15 @@ class Currency
         }
     }
 
+
     public function postbit_replace_currency(array &$post): void
     {
         global $db;
 
         $uid = (int)($post['uid'] ?? 0);
         if (!$uid) return;
+
+        $post['rpg_currency_display'] = "<div style='color:green;'>[UID={$uid}]</div>";
 
         $query = $db->simple_select('rpgsystem_currencies');
         while ($currency = $db->fetch_array($query)) {
@@ -103,8 +141,12 @@ class Currency
 
             $formatted = $currency['prefix'] . $balance . $currency['suffix'];
             $post["rpg_currency_{$slug}"] = htmlspecialchars_uni($formatted);
+
+            $post['rpg_currency_display'] .= "<div class=\"rpgcurrency\">{$currency['name']}: {$formatted}</div>";
         }
     }
+
+
 
 
 
@@ -173,3 +215,5 @@ class Currency
         ];
     }
 }
+
+
