@@ -10,8 +10,8 @@ function rpgsystem_info(): array
         'name' => 'RPG System',
         'description' => 'Модульная RPG-система: инвентарь, валюта, крафт и другое.',
         'website' => '',
-        'author' => 'Meowlins',
-        'authorsite' => '',
+        'author' => 'CaptainPaws',
+        'authorsite' => 'https://github.com/CaptainPaws/',
         'version' => '1.0.0',
         'compatibility' => '18*'
     ];
@@ -21,7 +21,6 @@ function rpgsystem_install()
 {
     global $db;
 
-    // Таблица модулей
     if (!$db->table_exists('rpgsystem_modules')) {
         $db->write_query("
             CREATE TABLE " . TABLE_PREFIX . "rpgsystem_modules (
@@ -34,7 +33,6 @@ function rpgsystem_install()
         ");
     }
 
-    // Таблица валют
     if (!$db->table_exists('rpgsystem_currencies')) {
         $db->write_query("
             CREATE TABLE " . TABLE_PREFIX . "rpgsystem_currencies (
@@ -53,7 +51,6 @@ function rpgsystem_install()
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ");
     } else {
-        // Расширяем таблицу, если какие-то поля отсутствуют
         $fields = [
             'slug' => "VARCHAR(50) NOT NULL DEFAULT ''",
             'on_register' => "INT NOT NULL DEFAULT 0",
@@ -72,7 +69,6 @@ function rpgsystem_install()
         }
     }
 
-    // Таблица балансов
     if (!$db->table_exists('rpgsystem_currency_balances')) {
         $db->write_query("
             CREATE TABLE " . TABLE_PREFIX . "rpgsystem_currency_balances (
@@ -85,7 +81,6 @@ function rpgsystem_install()
         ");
     }
 
-    // Таблица транзакций
     if (!$db->table_exists('rpgsystem_currency_transactions')) {
         $db->write_query("
             CREATE TABLE " . TABLE_PREFIX . "rpgsystem_currency_transactions (
@@ -100,7 +95,63 @@ function rpgsystem_install()
         ");
     }
 
-    // Сканируем и активируем модули
+    // Добавление полей опыта и уровня пользователям
+    if (!$db->field_exists('rpg_exp', 'users')) {
+        $db->write_query("ALTER TABLE " . TABLE_PREFIX . "users ADD `rpg_exp` INT(10) NOT NULL DEFAULT 0;");
+    }
+
+    if (!$db->field_exists('rpg_level', 'users')) {
+        $db->write_query("ALTER TABLE " . TABLE_PREFIX . "users ADD `rpg_level` INT(3) NOT NULL DEFAULT 1;");
+    }
+
+    // Группа настроек для модуля уровней
+    $gid = (int)$db->fetch_field(
+        $db->simple_select('settinggroups', 'gid', "name = 'rpg_levels'"),
+        'gid'
+    );
+
+    if (!$gid) {
+        $gid = $db->insert_query('settinggroups', [
+            'name' => 'rpg_levels',
+            'title' => 'RPG: Уровни',
+            'description' => 'Настройки системы уровней RPG',
+            'disporder' => 50,
+            'isdefault' => 0
+        ]);
+    }
+
+    $default_settings = [
+        ['name' => 'rpg_levels_exp_per_char', 'value' => '0.01', 'title' => 'EXP за символ'],
+        ['name' => 'rpg_levels_exp_base', 'value' => '2000', 'title' => 'EXP на 2 уровень'],
+        ['name' => 'rpg_levels_exp_step', 'value' => '1000', 'title' => 'Рост EXP на уровень'],
+        ['name' => 'rpg_levels_level_cap', 'value' => '50', 'title' => 'Максимальный уровень'],
+        ['name' => 'rpg_levels_enabled_forums', 'value' => '', 'title' => 'Форумы, где начисляется EXP'],
+    ];
+
+    foreach ($default_settings as $setting) {
+        $exists = $db->fetch_field(
+            $db->simple_select('settings', 'name', "name = '{$db->escape_string($setting['name'])}'"),
+            'name'
+        );
+
+        if (!$exists) {
+            $insert = [
+                'name' => $db->escape_string($setting['name']),
+                'title' => $db->escape_string($setting['title']),
+                'description' => '',
+                'optionscode' => 'text',
+                'value' => $db->escape_string($setting['value']),
+                'disporder' => 0,
+                'gid' => $gid
+            ];
+            $db->insert_query('settings', $insert);
+        }
+    }
+
+    rebuild_settings();
+
+
+
     require_once __DIR__ . '/rpgsystem/core.php';
     RPGSystem\Core::getInstance()->scanAndRegisterModules(true);
 }
@@ -112,7 +163,6 @@ function rpgsystem_activate()
 }
 
 function rpgsystem_deactivate() {}
-
 function rpgsystem_is_installed(): bool
 {
     global $db;
@@ -142,19 +192,15 @@ if (defined('IN_ADMINCP') && $mybb->input['module'] === 'rpgstuff-rpgsystem') {
 }
 
 // Хук для фронта
-//$plugins->add_hook('global_start', 'rpgsystem_global_init');
 $plugins->add_hook('global_start', 'rpgsystem_force_boot', 1);
 $plugins->add_hook('modcp_start', 'rpgsystem_modcp_router');
-
 
 function rpgsystem_global_init()
 {
     if (defined('IN_ADMINCP')) return;
-
     require_once __DIR__ . '/rpgsystem/core.php';
     RPGSystem\Core::getInstance()->loadEnabledModules();
 }
-
 
 function rpgsystem_modcp_router()
 {
@@ -162,16 +208,14 @@ function rpgsystem_modcp_router()
 
     if ($mybb->input['action'] !== 'rpg_balance') return;
 
-    require_once MYBB_ROOT . 'inc/plugins/rpgsystem/modules/Currency/ModcpBalance.php';
+    require_once MYBB_ROOT . 'inc/plugins/rpgsystem/modules/currency/modcpbalance.php';
+    $modcp .= \RPGSystem\Modules\currency\modcpbalance::render();
 
-    $modcp .= \RPGSystem\Modules\Currency\ModcpBalance::render();
 }
 
 function rpgsystem_force_boot()
 {
     global $mybb;
-
-    // Запускаем как можно раньше
     if (!defined('IN_ADMINCP')) {
         require_once __DIR__ . '/rpgsystem/core.php';
         \RPGSystem\Core::getInstance()->loadEnabledModules();
